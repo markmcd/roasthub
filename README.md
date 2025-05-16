@@ -1,10 +1,12 @@
-# GithubRoaster Crew
+# GitHubRoast - Gemini API x CrewAI Demo App
 
-Welcome to the GithubRoaster Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+Welcome to the GithubRoast project, powered by the [Gemini API](https://ai.google.dev/gemini-api/) and [crewAI](https://crewai.com). This app shows how to set up a CrewAI crew using Gemini models grounded with Google Search.
 
 ## Installation
 
 Ensure you have Python >=3.10 <3.13 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+
+### Initial setup
 
 First, if you haven't already, install uv:
 
@@ -14,41 +16,54 @@ pip install uv
 
 Next, navigate to your project directory and install the dependencies:
 
-(Optional) Lock the dependencies and install them by using the CLI command:
 ```bash
 crewai install
+# or
+uv sync
 ```
-### Customizing
 
-**Add your `OPENAI_API_KEY` into the `.env` file**
+#### API key
 
-- Modify `src/github_roaster/config/agents.yaml` to define your agents
-- Modify `src/github_roaster/config/tasks.yaml` to define your tasks
-- Modify `src/github_roaster/crew.py` to add your own logic, tools and specific args
-- Modify `src/github_roaster/main.py` to add custom inputs for your agents and tasks
-
-## Running the Project
-
-To kickstart your crew of AI agents and begin task execution, run this from the root folder of your project:
+Grab an API key from [Google AI Studio](https://aistudio.google.com/apikey) and
+add it to the `.env` file as `GEMINI_API_KEY`.
 
 ```bash
-$ crewai run
+cp .env.example .env
+# Now edit .env and add add your key to the GEMINI_API_KEY line.
 ```
 
-This command initializes the github-roaster Crew, assembling the agents and assigning them tasks as defined in your configuration.
+You can now choose to run the API service locally or with Docker. Read one of
+the the next two sections depending on what you prefer. Docker will need to be
+installed, or just run locally using the already-installed tools.
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
+### Run locally
 
-## Understanding Your Crew
+Run the service. Use `--reload` to automatically refresh while you're editing.
 
-The github-roaster Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
+```bash
+uv run uvicorn api.service:app --reload
+```
 
-## Support
+With the API server running, browse to http://localhost:8000/
 
-For support, questions, or feedback regarding the GithubRoaster Crew or crewAI.
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
+### Docker
 
-Let's create wonders together with the power and simplicity of crewAI.
+To build and run a docker image locally, using a specified API key:
+
+```bash
+docker build -t roaster-backend-local:latest .
+docker run -p 8000:8080 -e GEMINI_API_KEY=your_api_key_here --name my-roaster-app-local roaster-backend-local:latest
+```
+
+With the API server running, browse to the docker port, http://localhost:8080/
+
+## Running the Crew
+
+To run your crew of AI agents directly, without an API server, run this from the root folder of your project. Pass your GitHub username as the last argument to roast yourself.
+
+```bash
+uv run github_roaster yourgithubusername
+```
+
+You will get a markdown file created in the same directory, `yourgithubusername.md`. Load it in your favourite markdown renderer, e.g. [`glow`](https://github.com/charmbracelet/glow).
+
