@@ -2,6 +2,8 @@
 
 Welcome to the GithubRoast project, powered by the [Gemini API](https://ai.google.dev/gemini-api/) and [crewAI](https://crewai.com). This app shows how to set up a CrewAI crew using Gemini models grounded with Google Search.
 
+If you just want to try it out, go to https://roast.markm.cd/
+
 ## Installation
 
 Ensure you have Python >=3.10 <3.13 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
