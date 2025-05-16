@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Roaster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748; /* bg-gray-800 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568; /* bg-gray-600 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* bg-gray-500 */
+        }
+
+        /* Styling for markdown content within the status display div */
+        #statusDisplay h1, #statusDisplay h2, #statusDisplay h3, #statusDisplay h4, #statusDisplay h5, #statusDisplay h6 {
+            font-weight: 600; /* semi-bold */
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: #e2e8f0; /* gray-200 */
+        }
+        #statusDisplay p {
+            margin-bottom: 1em;
+        }
+        #statusDisplay ul, #statusDisplay ol {
+            list-style-position: inside;
+            margin-left: 1em;
+            margin-bottom: 1em;
+        }
+        #statusDisplay li {
+            margin-bottom: 0.5em;
+        }
+        #statusDisplay code {
+            background-color: #4a5568; /* gray-600 */
+            padding: 0.2em 0.4em;
+            border-radius: 0.3em;
+            font-size: 0.875em; /* sm text */
+        }
+        #statusDisplay pre {
+            background-color: #1a202c; /* gray-900 */
+            padding: 1em;
+            border-radius: 0.5em;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
+
+        /* CSS for the spinner */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid #ef4444; /* red-500 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+            margin-top: -15px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-3xl border border-gray-700">
+        <h1 class="text-4xl font-bold text-center text-red-500 mb-6">
+            <span class="text-gray-200">GitHub</span>Roast
+        </h1>
+
+        <div class="mb-6">
+            <label for="usernameInput" class="block text-gray-300 text-sm font-medium mb-2">
+                GitHub Username (or org, or whatever, this is AI):
+            </label>
+            <div class="flex space-x-3">
+                <input
+                    type="text"
+                    id="usernameInput"
+                    placeholder="e.g., markmcd"
+                    class="flex-1 p-3 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-100 placeholder-gray-400 shadow-sm"
+                >
+                <button
+                    id="roastButton"
+                    class="px-6 py-3 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ease-in-out shadow-lg"
+                >
+                    Roast!
+                </button>
+            </div>
+        </div>
+
+        <div
+            id="statusDisplay"
+            class="w-full h-auto min-h-[200px] p-4 bg-gray-700 border border-gray-600 rounded-md text-gray-200 text-base leading-relaxed overflow-y-auto shadow-inner"
+        >
+            <p class="text-gray-400">Enter a GitHub username and click "Roast!" to begin.</p>
+        </div>
+    </div>
+
+    <script>
+        const usernameInput = document.getElementById('usernameInput');
+        const roastButton = document.getElementById('roastButton');
+        const statusDisplay = document.getElementById('statusDisplay');
+        let eventSource = null; // To keep track of the active EventSource
+
+        // Event listener for the button click
+        roastButton.addEventListener('click', startRoast);
+
+        // Event listener for the Enter key on the input field
+        usernameInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent default form submission behavior
+                startRoast();
+            }
+        });
+
+        function resetUI() {
+            // Clear previous content and add spinner
+            statusDisplay.innerHTML = `
+                <div class="flex items-center">
+                    <div class="spinner"></div>
+                    <p class="text-gray-400">Starting roast...</p>
+                </div>
+            `;
+            roastButton.disabled = true;
+            roastButton.textContent = 'Roasting...';
+            if (eventSource) {
+                eventSource.close();
+            }
+        }
+
+        function enableRoastButton(text = 'Roast!') {
+            roastButton.disabled = false;
+            roastButton.textContent = text;
+        }
+
+        function handleStreamError(error, message) {
+            console.error('EventSource failed:', error);
+            statusDisplay.innerHTML = `<p class="text-red-400">${message}</p>`; // Render error as HTML
+            if (eventSource) {
+                eventSource.close();
+            }
+            enableRoastButton();
+        }
+
+        function updateStatusText(message) {
+            // Update the status display with the latest message and spinner
+            statusDisplay.innerHTML = `
+                <div class="flex items-center">
+                    <div class="spinner"></div>
+                    <p class="text-gray-200">${message}</p>
+                </div>
+            `;
+            statusDisplay.scrollTop = statusDisplay.scrollHeight; // Scroll to bottom
+        }
+
+        function startRoast() {
+            const username = usernameInput.value.trim();
+            if (!username) {
+                alert('Please enter a GitHub username!');
+                return;
+            }
+
+            resetUI();
+
+            const apiBaseUrl = window.location.origin;
+            const sseUrl = `${apiBaseUrl}/roast?username=${encodeURIComponent(username)}`;
+
+            eventSource = new EventSource(sseUrl);
+
+            eventSource.onopen = function(event) {
+                console.log('Connection established.');
+            };
+
+            // Handler for 'progress_update' events
+            eventSource.addEventListener('progress_update', function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Received progress_update:', data);
+
+                    let displayMessage = '';
+                    if (data.status === 'started') {
+                        displayMessage = 'Researching user...';
+                    } else if (data.status === 'task_done') {
+                        if (data.task === 'user_research_task') {
+                            displayMessage = 'Researching projects...';
+                        } else if (data.task === 'project_research_task') {
+                            displayMessage = 'Writing roast...';
+                        } else if (data.task === 'roasting_task') {
+                            displayMessage = 'Done!';
+                        } else {
+                            displayMessage = `Task "${data.task}" completed.`; // Fallback for unknown tasks
+                        }
+                    }
+                    updateStatusText(displayMessage);
+                } catch (e) {
+                    handleStreamError(e, `Error parsing progress update: ${event.data}`);
+                }
+            });
+
+            // Handler for messages without a specific 'event:' field (like the final 'completed' or general errors)
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Received generic message:', data);
+
+                    if (data.status === 'completed') {
+                        // Render final roast as HTML, removing spinner
+                        statusDisplay.innerHTML = marked.parse(data.output);
+                        eventSource.close();
+                        enableRoastButton();
+                    } else if (data.status === 'error') {
+                        handleStreamError(null, `Error during roasting: ${data.message || 'Please try again.'}`);
+                    }
+                } catch (e) {
+                    handleStreamError(e, `Error parsing final message: ${event.data}`);
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                handleStreamError(error, 'Could not connect to the roasting service or an error occurred.');
+            };
+        }
+    </script>
+</body>
+</html>

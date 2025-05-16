@@ -1,0 +1,36 @@
+user_research_task:
+  description: >
+    Conduct thorough research about GitHub user @{username}.
+    Find out their bio, any social media accounts they have, any repositories
+    they own and any to which they contribute.
+  expected_output: >
+    A detailed summary of their technical contributions.
+  agent: user_researcher
+
+project_research_task:
+  description: >
+    Conduct thorough research about the projects that GitHub @{username} has been
+    involved in. Use the list of projects found during the earlier user research
+    task and find out more information about each of the projects. You need to
+    find the popularity of the projects, what the user's role was, and how much
+    they were involved.
+  expected_output: >
+    A summary of each project the user has been involved in, including details
+    of their involvement, and whether the project was popular, abandoned or mid.
+    Also include a summary highlighting any links between projects that might be
+    related.
+  agent: project_researcher
+
+roasting_task:
+  description: >
+    Using the information gathered so far, construct a hilarious roast of the user. Be
+    sure to pick on any abandoned projects, or long-open pull-requests that have no
+    traction. Find anything that it looks like they want to be involved in and poke a
+    bit of fun at that. If there are any common themes, use them as the basis for jokes
+    too.
+  expected_output: >
+    A detailed roast, written in markdown, of the user and their work. If there's lots
+    to work with, make it 3-4 paragaphs. If there's not much, make fun of the fact there
+    is little there, but keep it to 1 paragraph. DO NOT embed the output in a ```markdown
+    block. Just raw markdown.
+  agent: roast_writer
