@@ -13,6 +13,8 @@ from github_roaster.crew import GithubRoaster
 
 
 STATIC_DIR = pathlib.Path(__file__).parent.parent / "static"
+KEEPALIVE_INTERVAL_SECS = 10
+MAX_KEEPALIVE_SECS = 120
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -63,31 +65,52 @@ async def process_roast_stream(username: str):
         # Start the crew running in the background so we don't block.
         roast_task = asyncio.create_task(_process_roast(username, update_queue))
 
+        # Start a task to pull queued events for the main loop.
+        data_task = asyncio.create_task(update_queue.get())
+
+        # Start a heartbeat task as a keepalive on mobile devices.
+        heartbeat_task = asyncio.create_task(asyncio.sleep(KEEPALIVE_INTERVAL_SECS))
+
         try:
             while True:
-                # Poll for updates from the roast task - the callbacks should be
-                # sending updates, so the timeout is pretty generous.
-                update = await asyncio.wait_for(update_queue.get(), timeout=120)
+                # Poll for updates from the roast task while sending heartbeat pings.
+                done, pending = await asyncio.wait(
+                    [data_task, heartbeat_task],
+                    return_when=asyncio.FIRST_COMPLETED,
+                    timeout=MAX_KEEPALIVE_SECS,
+                )
 
-                output = ''
-                # Include an event if one is present.
-                if event := update.pop('event', None):
-                    output += f'event: {event}\n'
+                if data_task in done:
+                    update = await data_task
 
-                output += f"data: {json.dumps(update)}\n\n"
-                yield output
+                    output = ''
+                    # Include an event if one is present.
+                    if event := update.pop('event', None):
+                        output += f'event: {event}\n'
 
-                # Break if the crew is done.
-                if update.get('status') == 'completed':
-                    break
+                    output += f"data: {json.dumps(update)}\n\n"
+                    yield output
+                    # Get the next queue item.
+                    data_task = asyncio.create_task(update_queue.get())
+
+                    # Break if the crew is done.
+                    if update.get('status') == 'completed':
+                        break
+
+                elif heartbeat_task in done:
+                    yield "event: ping\ndata: {}\n\n"
+                    # Reset timer.
+                    heartbeat_task = asyncio.create_task(asyncio.sleep(KEEPALIVE_INTERVAL_SECS))
+
+                elif not done and pending:  # real timeout
+                    raise asyncio.TimeoutError("Stream timed out.")
 
         except asyncio.TimeoutError:
-            # Handle cases where the task times out between updates.
+            # Send an error event if the connection times out.
             yield f"data: {json.dumps({'status': 'error', 'message': 'Stream timed out.'})}\n\n"
             print("Stream timed out: No updates received.")
 
         except Exception as e:
-            # Catch any other exceptions during streaming
             yield f"data: {json.dumps({'status': 'error', 'message': f'An error occurred: {str(e)}'})}\n\n"
             print(f"Error during streaming: {e}")
 
@@ -95,7 +118,12 @@ async def process_roast_stream(username: str):
             # Ensure background task is cancelled if the client disconnects or streaming finishes
             if not roast_task.done():
                 roast_task.cancel()
-            await asyncio.gather(roast_task, return_exceptions=True)
+            if not heartbeat_task.done():
+                heartbeat_task.cancel()
+            if not data_task.done():
+                data_task.cancel()
+
+            await asyncio.gather(roast_task, heartbeat_task, return_exceptions=True)
 
     return StreamingResponse(generate_updates(), media_type="text/event-stream")
 
