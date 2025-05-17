@@ -6,7 +6,7 @@ If you just want to try it out, go to https://roast.markm.cd/
 
 ## Installation
 
-Ensure you have Python >=3.10 <3.13 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+Ensure you have Python >=3.10 <3.13 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling.
 
 ### Initial setup
 
@@ -19,8 +19,6 @@ pip install uv
 Next, navigate to your project directory and install the dependencies:
 
 ```bash
-crewai install
-# or
 uv sync
 ```
 
