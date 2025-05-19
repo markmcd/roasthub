@@ -18,7 +18,7 @@ KEEPALIVE_INTERVAL_SECS = 5
 MAX_KEEPALIVE_SECS = 120
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/r", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 async def _process_roast(username: str, output_queue: asyncio.Queue):
@@ -143,4 +143,4 @@ async def process_roast_stream(username: str):
 @app.get("/")
 async def home_page():
     """Redirect to the index in the static dir."""
-    return RedirectResponse(url="/static/index.html")
+    return RedirectResponse(url="/r/index.html")
