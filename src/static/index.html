@@ -110,6 +110,18 @@
         >
             <p class="text-gray-400">Enter a GitHub username and click "Roast!" to begin.</p>
         </div>
+
+        <div id="shareButtons" class="mt-6 flex flex-wrap justify-center gap-4 hidden">
+            <button id="shareMobileButton" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ease-in-out shadow-lg">
+                Share (Mobile)
+            </button>
+            <button id="shareTwitterButton" class="px-4 py-2 bg-blue-400 text-white font-semibold rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ease-in-out shadow-lg">
+                Share on Twitter
+            </button>
+            <button id="shareLinkedInButton" class="px-4 py-2 bg-blue-700 text-white font-semibold rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ease-in-out shadow-lg">
+                Share on LinkedIn
+            </button>
+        </div>
     </div>
 
     <div class="text-center text-gray-500 text-sm mt-8">
@@ -131,18 +143,28 @@
         const usernameInput = document.getElementById('usernameInput');
         const roastButton = document.getElementById('roastButton');
         const statusDisplay = document.getElementById('statusDisplay');
-        let eventSource = null; // To keep track of the active EventSource
+        const shareButtonsDiv = document.getElementById('shareButtons');
+        const shareMobileButton = document.getElementById('shareMobileButton');
+        const shareTwitterButton = document.getElementById('shareTwitterButton');
+        const shareLinkedInButton = document.getElementById('shareLinkedInButton');
 
-        // Event listener for the button click
+        let eventSource = null;
+        let finalRoastText = ''
+        let currentUsername = '';
+
         roastButton.addEventListener('click', startRoast);
 
-        // Event listener for the Enter key on the input field
         usernameInput.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent default form submission behavior
+                event.preventDefault();
                 startRoast();
             }
         });
+
+        // Share buttons
+        shareMobileButton.addEventListener('click', () => shareRoast('mobile'));
+        shareTwitterButton.addEventListener('click', () => shareRoast('twitter'));
+        shareLinkedInButton.addEventListener('click', () => shareRoast('linkedin'));
 
         function resetUI() {
             // Clear previous content and add spinner
@@ -154,6 +176,10 @@
             `;
             roastButton.disabled = true;
             roastButton.textContent = 'Roasting...';
+            shareButtonsDiv.classList.add('hidden');
+            finalRoastText = '';
+            currentUsername = '';
+
             if (eventSource) {
                 eventSource.close();
             }
@@ -164,13 +190,18 @@
             roastButton.textContent = text;
         }
 
+        function showShareButtons() {
+            shareButtonsDiv.classList.remove('hidden');
+        }
+
         function handleStreamError(error, message) {
             console.error('EventSource failed:', error);
-            statusDisplay.innerHTML = `<p class="text-red-400">${message}</p>`; // Render error as HTML
+            statusDisplay.innerHTML = `<p class="text-red-400">${message}</p>`;
             if (eventSource) {
                 eventSource.close();
             }
             enableRoastButton();
+            shareButtonsDiv.classList.add('hidden'); // Ensure share buttons are hidden on error
         }
 
         function updateStatusText(message) {
@@ -181,7 +212,35 @@
                     <p class="text-gray-200">${message}</p>
                 </div>
             `;
-            statusDisplay.scrollTop = statusDisplay.scrollHeight; // Scroll to bottom
+            statusDisplay.scrollTop = statusDisplay.scrollHeight;
+        }
+
+        function shareRoast(platform) {
+            const baseUrl = 'https://roast.markm.cd/';
+            const shareUrl = currentUsername ? `${baseUrl}?username=${encodeURIComponent(currentUsername)}` : baseUrl;
+            const title = `🔥 Roasted: ${currentUsername} 🔥`;
+            const description = finalRoastText.substring(0, 200) + (finalRoastText.length > 200 ? '...' : '');
+
+            // Use shorter text for twitter
+            const twitterText = `🔥 Roasted: ${currentUsername} 🔥\n\n${description}\n\nby @m4rkmc: `;
+            const linkedInText = `${title}\n\n${description}\n\n${shareUrl}`;
+
+            if (platform === 'mobile' && navigator.share) {
+                navigator.share({
+                    title: title,
+                    text: twitterText,
+                    url: shareUrl,
+                }).then(() => console.log('Shared successfully'))
+                  .catch((error) => console.error('Error sharing:', error));
+            } else if (platform === 'twitter') {
+                const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(shareUrl)}`;
+                window.open(tweetUrl, '_blank');
+            } else if (platform === 'linkedin') {
+                const linkedInUrl = `https://www.linkedin.com/feed/?shareActive=true&shareUrl=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(linkedInText)}`
+                window.open(linkedInUrl, '_blank');
+            } else {
+                alert('Sharing not supported on this platform or browser.');
+            }
         }
 
         function startRoast() {
@@ -193,6 +252,8 @@
 
             resetUI();
 
+            currentUsername = username;
+
             const apiBaseUrl = window.location.origin;
             const sseUrl = `${apiBaseUrl}/roast?username=${encodeURIComponent(username)}`;
 
@@ -202,7 +263,6 @@
                 console.log('Connection established.');
             };
 
-            // Handler for 'progress_update' events
             eventSource.addEventListener('progress_update', function(event) {
                 try {
                     const data = JSON.parse(event.data);
@@ -219,7 +279,8 @@
                         } else if (data.task === 'roasting_task') {
                             displayMessage = 'Done!';
                         } else {
-                            displayMessage = `Task "${data.task}" completed.`; // Fallback for unknown tasks
+                            // Fallback for anything else.
+                            displayMessage = `Task "${data.task}" completed.`;
                         }
                     }
                     updateStatusText(displayMessage);
@@ -228,17 +289,18 @@
                 }
             });
 
-            // Handler for messages without a specific 'event:' field (like the final 'completed' or general errors)
+            // Handler for content messages and errors.
             eventSource.onmessage = function(event) {
                 try {
                     const data = JSON.parse(event.data);
                     console.log('Received generic message:', data);
 
                     if (data.status === 'completed') {
-                        // Render final roast as HTML, removing spinner
                         statusDisplay.innerHTML = marked.parse(data.output);
+                        finalRoastText = data.output;
                         eventSource.close();
                         enableRoastButton();
+                        showShareButtons();
                     } else if (data.status === 'error') {
                         handleStreamError(null, `Error during roasting: ${data.message || 'Please try again.'}`);
                     }
@@ -259,6 +321,11 @@
             if (usernameFromQuery) {
                 usernameInput.value = usernameFromQuery;
                 setTimeout(startRoast, 100);
+            }
+
+            // Hide the mobile share button if it's not supported.
+            if (!navigator.share) {
+                shareMobileButton.style.display = 'none';
             }
         });
     </script>
