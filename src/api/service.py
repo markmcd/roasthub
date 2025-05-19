@@ -9,6 +9,7 @@ from crewai.tasks.task_output import TaskOutput
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+import urllib.parse
 
 from github_roaster.crew import GithubRoaster
 
@@ -141,6 +142,10 @@ async def process_roast_stream(username: str):
 
 
 @app.get("/")
-async def home_page():
+async def home_page(username: str | None = None):
     """Redirect to the index in the static dir."""
-    return RedirectResponse(url="/r/index.html")
+    if username:
+        username = urllib.parse.quote_plus(username)
+        return RedirectResponse(url=f"/r/index.html?username={username}")
+    else:
+        return RedirectResponse(url="/r/index.html")
