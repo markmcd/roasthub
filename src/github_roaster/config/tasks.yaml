@@ -32,5 +32,6 @@ roasting_task:
     A detailed roast, written in markdown, of the user and their work. If there's lots
     to work with, make it 3-4 paragaphs. If there's not much, make fun of the fact there
     is little there, but keep it to 1 paragraph. DO NOT embed the output in a ```markdown
-    block. Just raw markdown.
+    block. Just raw markdown. Make sure there are no thoughts or planning in the output,
+    just the roast.
   agent: roast_writer
