@@ -7,7 +7,7 @@ import traceback
 from crewai.agents.parser import AgentFinish
 from crewai.tasks.task_output import TaskOutput
 from fastapi import FastAPI
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import urllib.parse
 
@@ -15,6 +15,7 @@ from github_roaster.crew import GithubRoaster
 
 
 STATIC_DIR = pathlib.Path(__file__).parent.parent / "static"
+INDEX_HTML_PATH = STATIC_DIR / "index.html"
 KEEPALIVE_INTERVAL_SECS = 5
 MAX_KEEPALIVE_SECS = 120
 
@@ -144,8 +145,6 @@ async def process_roast_stream(username: str):
 @app.get("/")
 async def home_page(username: str | None = None):
     """Redirect to the index in the static dir."""
-    if username:
-        username = urllib.parse.quote_plus(username)
-        return RedirectResponse(url=f"/r/index.html?username={username}")
-    else:
-        return RedirectResponse(url="/r/index.html")
+    with open(INDEX_HTML_PATH, 'r', encoding='utf-8') as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content, status_code=200)
