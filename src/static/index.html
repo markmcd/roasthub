@@ -93,7 +93,7 @@
                     type="text"
                     id="usernameInput"
                     placeholder="e.g., markmcd"
-                    class="flex-1 p-3 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-100 placeholder-gray-400 shadow-sm"
+                    class="flex-1 p-3 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-100 placeholder-gray-400 shadow-sm min-w-0"
                 >
                 <button
                     id="roastButton"
@@ -196,7 +196,7 @@
 
         function handleStreamError(error, message) {
             console.error('EventSource failed:', error);
-            statusDisplay.innerHTML = `<p class="text-red-400">${message}</p>`;
+            statusDisplay.innerHTML = `<p class="text-red-400">${message}</p><p class="text-red-400">Note that on mobile navigating away may interrupt the generation.</p>`;
             if (eventSource) {
                 eventSource.close();
             }
