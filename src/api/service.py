@@ -13,7 +13,7 @@ from github_roaster.crew import GithubRoaster
 
 
 STATIC_DIR = pathlib.Path(__file__).parent.parent / "static"
-KEEPALIVE_INTERVAL_SECS = 10
+KEEPALIVE_INTERVAL_SECS = 5
 MAX_KEEPALIVE_SECS = 120
 
 app = FastAPI()
