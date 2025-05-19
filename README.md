@@ -4,6 +4,35 @@ Welcome to the GithubRoast project, powered by the [Gemini API](https://ai.googl
 
 If you just want to try it out, go to https://roast.markm.cd/
 
+## How it works
+
+A CrewAI crew is defined that follows a short plan:
+
+* Research the user
+* Research their projects
+* Write a roast
+
+You can see the CrewAI configuration in [the config
+dir](src/github_roaster/config/). Also check out the [custom LLM
+class](src/github_roaster/crew.py) that uses the `google_search` tool inside
+CrewAI.
+
+The agents all use the Gemini API, by default [Gemini 2.5
+Flash](https://ai.google.dev/gemini-api/docs/models#gemini-2.5-flash-preview).
+The agents defined for the research tasks use the Gemini API's [Google Search
+Grounding](https://ai.google.dev/gemini-api/docs/grounding) feature to look up
+any relevant information on the supplied user's GitHub profile. This is easy to
+implement, runs pretty quickly and can grab any relevant GitHub information from
+around the web.
+
+The Crew is wrapped in a FastAPI that serves a streaming endpoint. This API
+streams progress updates to indicate as tasks complete, and eventually returns a
+message with the roast, in markdown.
+
+The web frontend is just a static HTML page that calls the API and renders
+updates. If you want to develop something more complex, the API is serving the
+HTML as a static route, so you can deploy a separate web app pointed at the API.
+
 ## Installation
 
 Ensure you have Python >=3.10 <3.13 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling.
