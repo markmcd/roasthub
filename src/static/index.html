@@ -251,6 +251,16 @@
                 handleStreamError(error, 'Could not connect to the roasting service or an error occurred.');
             };
         }
+
+        // Support usernames by querystring.
+        window.addEventListener('DOMContentLoaded', (event) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const usernameFromQuery = urlParams.get('username');
+            if (usernameFromQuery) {
+                usernameInput.value = usernameFromQuery;
+                setTimeout(startRoast, 100);
+            }
+        });
     </script>
 </body>
 </html>
