@@ -2,6 +2,7 @@ import asyncio
 import json
 import pathlib
 import re
+import traceback
 
 from crewai.agents.parser import AgentFinish
 from crewai.tasks.task_output import TaskOutput
@@ -28,9 +29,13 @@ async def _process_roast(username: str, output_queue: asyncio.Queue):
     roasting_loop = asyncio.get_running_loop()
 
     def update_hook(msg: TaskOutput | AgentFinish) -> None:
-        if not isinstance(msg, TaskOutput):
+        if isinstance(msg, AgentFinish):
             # Any step_callbacks are handled here.
-            print(msg)
+            print(json.dumps({
+                'thought': msg.thought,
+                'output': msg.output,
+                'text': msg.text
+            }))
             return
 
         # Write to the async queue from this (sync) callback by using
@@ -82,6 +87,8 @@ async def process_roast_stream(username: str):
 
                 if data_task in done:
                     update = await data_task
+                    # Log the message
+                    print(json.dumps(update))
 
                     output = ''
                     # Include an event if one is present.
@@ -113,6 +120,11 @@ async def process_roast_stream(username: str):
         except Exception as e:
             yield f"data: {json.dumps({'status': 'error', 'message': f'An error occurred: {str(e)}'})}\n\n"
             print(f"Error during streaming: {e}")
+            print(json.dumps({
+                "type": type(e).__name__,
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            }))
 
         finally:
             # Ensure background task is cancelled if the client disconnects or streaming finishes
