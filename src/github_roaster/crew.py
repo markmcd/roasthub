@@ -48,7 +48,7 @@ class GeminiWithGoogleSearch(LLM):
 
 
 @CrewBase
-class GithubRoaster():
+class GithubRoaster:
     """GithubRoaster crew"""
 
     agents: list[BaseAgent]
@@ -58,7 +58,7 @@ class GithubRoaster():
     def user_researcher(self) -> Agent:
         gemini_with_search = GeminiWithGoogleSearch(model=MODEL)
         return Agent(
-            config=self.agents_config['user_researcher'],
+            config=self.agents_config['user_researcher'], # type: ignore[reportAttributeAccessIssue]
             llm=gemini_with_search,
             verbose=True,
         )
@@ -67,7 +67,7 @@ class GithubRoaster():
     def project_researcher(self) -> Agent:
         gemini_with_search = GeminiWithGoogleSearch(model=MODEL)
         return Agent(
-            config=self.agents_config['project_researcher'],
+            config=self.agents_config['project_researcher'], # type: ignore[reportAttributeAccessIssue]
             llm=gemini_with_search,
             verbose=True,
         )
@@ -75,7 +75,7 @@ class GithubRoaster():
     @agent
     def roast_writer(self) -> Agent:
         return Agent(
-            config=self.agents_config['roast_writer'],
+            config=self.agents_config['roast_writer'], # type: ignore[reportAttributeAccessIssue]
             verbose=True,
             llm=MODEL,
         )
@@ -83,19 +83,19 @@ class GithubRoaster():
     @task
     def user_research_task(self) -> Task:
         return Task(
-            config=self.tasks_config['user_research_task'],
+            config=self.tasks_config['user_research_task'], # type: ignore[reportAttributeAccessIssue]
         )
 
     @task
     def project_research_task(self) -> Task:
         return Task(
-            config=self.tasks_config['project_research_task'],
+            config=self.tasks_config['project_research_task'], # type: ignore[reportAttributeAccessIssue]
         )
 
     @task
     def roasting_task(self) -> Task:
         return Task(
-            config=self.tasks_config['roasting_task'],
+            config=self.tasks_config['roasting_task'], # type: ignore[reportAttributeAccessIssue]
             # output_file='roast.md'
         )
 
@@ -103,8 +103,8 @@ class GithubRoaster():
     def crew(self, **kwargs) -> Crew:
         """Creates the GithubRoaster crew"""
         return Crew(
-            agents=self.agents, # Automatically created by the @agent decorator
-            tasks=self.tasks, # Automatically created by the @task decorator
+            agents=self.agents,  # type: ignore[reportCallIssue]
+            tasks=self.tasks, # type: ignore[reportCallIssue]
             process=Process.sequential,
             verbose=True,
             **kwargs,
