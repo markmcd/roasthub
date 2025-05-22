@@ -14,7 +14,7 @@
             "name": "PyDebug: Run Crew",
             "type": "debugpy",
             "request": "launch",
-            "module": "github_roaster.main",
+            "module": "github_resume_generator.main",
             "args": "markmcd",
             "cwd": "${workspaceFolder}",
             "justMyCode": false,
