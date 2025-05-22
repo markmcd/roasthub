@@ -1,25 +1,22 @@
-# GitHubRoast - Gemini API x CrewAI Demo App
+# GitHub Resume Generator - Gemini API x CrewAI Demo App
 
-Welcome to the GithubRoast project, powered by the [Gemini API](https://ai.google.dev/gemini-api/) and [crewAI](https://crewai.com). This app shows how to set up a CrewAI crew using Gemini models grounded with Google Search.
-
-If you just want to try it out, go to https://roast.markm.cd/
+Welcome to the Github Resume Generator project, powered by the [Gemini API](https://ai.google.dev/gemini-api/) and [crewAI](https://crewai.com). This app shows how to set up a CrewAI crew using Gemini models grounded with Google Search to generate a CV/Resume from a GitHub profile.
 
 ## How it works
 
 A CrewAI crew is defined that follows a short plan:
 
-* Research the user
-* Research their projects
-* Write a roast
+* Research the user's GitHub profile
+* Generate a CV/Resume in Markdown format
 
 You can see the CrewAI configuration in [the config
-dir](src/github_roaster/config/). Also check out the [custom LLM
-class](src/github_roaster/crew.py) that uses the `google_search` tool inside
+dir](src/github_resume_generator/config/). Also check out the [custom LLM
+class](src/github_resume_generator/crew.py) that uses the `google_search` tool inside
 CrewAI.
 
 The agents all use the Gemini API, by default [Gemini 2.5
 Flash](https://ai.google.dev/gemini-api/docs/models#gemini-2.5-flash-preview).
-The agents defined for the research tasks use the Gemini API's [Google Search
+The agent defined for the research task uses the Gemini API's [Google Search
 Grounding](https://ai.google.dev/gemini-api/docs/grounding) feature to look up
 any relevant information on the supplied user's GitHub profile. This is easy to
 implement, runs pretty quickly and can grab any relevant GitHub information from
@@ -27,7 +24,7 @@ around the web.
 
 The Crew is wrapped in a FastAPI that serves a streaming endpoint. This API
 streams progress updates to indicate as tasks complete, and eventually returns a
-message with the roast, in markdown.
+message with the resume, in markdown.
 
 The web frontend is just a static HTML page that calls the API and renders
 updates. If you want to develop something more complex, the API is serving the
@@ -80,19 +77,18 @@ With the API server running, browse to http://localhost:8000/
 To build and run a docker image locally, using a specified API key:
 
 ```bash
-docker build -t roaster-backend-local:latest .
-docker run -p 8000:8080 -e GEMINI_API_KEY=your_api_key_here --name my-roaster-app-local roaster-backend-local:latest
+docker build -t resume-generator-backend-local:latest .
+docker run -p 8000:8080 -e GEMINI_API_KEY=your_api_key_here --name my-resume-generator-app-local resume-generator-backend-local:latest
 ```
 
 With the API server running, browse to the docker port, http://localhost:8080/
 
 ## Running the Crew
 
-To run your crew of AI agents directly, without an API server, run this from the root folder of your project. Pass your GitHub username as the last argument to roast yourself.
+To run your crew of AI agents directly, without an API server, run this from the root folder of your project. Pass your GitHub username as the last argument to generate their resume.
 
 ```bash
-uv run github_roaster yourgithubusername
+uv run github_resume_generator yourgithubusername
 ```
 
-You will get a markdown file created in the same directory, `yourgithubusername.md`. Load it in your favourite markdown renderer, e.g. [`glow`](https://github.com/charmbracelet/glow).
-
+You will get a markdown file created in the same directory, `yourgithubusername_resume.md`. Load it in your favourite markdown renderer, e.g. [`glow`](https://github.com/charmbracelet/glow).

@@ -48,60 +48,45 @@ class GeminiWithGoogleSearch(LLM):
 
 
 @CrewBase
-class GithubRoaster:
-    """GithubRoaster crew"""
+class GithubResumeGenerator:
+    """GithubResumeGenerator crew"""
 
     agents: list[BaseAgent]
     tasks: list[Task]
 
     @agent
-    def user_researcher(self) -> Agent:
+    def github_profile_researcher(self) -> Agent:
         gemini_with_search = GeminiWithGoogleSearch(model=MODEL)
         return Agent(
-            config=self.agents_config['user_researcher'], # type: ignore[reportAttributeAccessIssue]
-            llm=gemini_with_search,
-            verbose=True,
-        )
-
-    @agent
-    def project_researcher(self) -> Agent:
-        gemini_with_search = GeminiWithGoogleSearch(model=MODEL)
-        return Agent(
-            config=self.agents_config['project_researcher'], # type: ignore[reportAttributeAccessIssue]
+            config=self.agents_config['github_profile_researcher'],
             llm=gemini_with_search,
             verbose=True,
         )
     
     @agent
-    def roast_writer(self) -> Agent:
+    def resume_writer(self) -> Agent:
         return Agent(
-            config=self.agents_config['roast_writer'], # type: ignore[reportAttributeAccessIssue]
+            config=self.agents_config['resume_writer'],
             verbose=True,
             llm=MODEL,
         )
 
     @task
-    def user_research_task(self) -> Task:
+    def profile_research_task(self) -> Task:
         return Task(
-            config=self.tasks_config['user_research_task'], # type: ignore[reportAttributeAccessIssue]
+            config=self.tasks_config['profile_research_task'],
         )
 
     @task
-    def project_research_task(self) -> Task:
+    def resume_generation_task(self) -> Task:
         return Task(
-            config=self.tasks_config['project_research_task'], # type: ignore[reportAttributeAccessIssue]
-        )
-
-    @task
-    def roasting_task(self) -> Task:
-        return Task(
-            config=self.tasks_config['roasting_task'], # type: ignore[reportAttributeAccessIssue]
-            # output_file='roast.md'
+            config=self.tasks_config['resume_generation_task'],
+            # output_file='resume.md' # Optional: define output file for the resume
         )
 
     @crew
     def crew(self, **kwargs) -> Crew:
-        """Creates the GithubRoaster crew"""
+        """Creates the GithubResumeGenerator crew"""
         return Crew(
             agents=self.agents,  # type: ignore[reportCallIssue]
             tasks=self.tasks, # type: ignore[reportCallIssue]
